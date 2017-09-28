@@ -82,21 +82,21 @@ class ShareClass():
             Bfq['HFQ_low'] = Hfq['low']
             if not Qfq is None:
                 del Bfq['code']
-                dfgb = ShareClass().GetGuben(code)
+                dfgb = self.GetGuben(code)
                 dfgb.sort_index()
                 dfgp = Bfq
                 dfgp.sort_index()
                 guben = []
                 liutongguben = []
                 change = []
+		code_list = []
                 n = 0
                 nan = 0
                 before = 0
                 for x in dfgp['date']:
+		    code_list.append(code)
                     try:
-
                         guben.append(float(dfgb[dfgb.index <= x].iloc[-1, 12:13]) * dfgp.loc[n, 'close'])
-
                     except:
                         guben.append(numpy.NaN)
                     try:
@@ -106,14 +106,19 @@ class ShareClass():
                         nan = nan + 1
                     n = n + 1
                 for x in dfgp['HFQ_close']:
-                    change.append(math.log(x / before, math.e))
-
+                    if before != 0:
+                        change.append(math.log(x / before, math.e))
+		    else:
+			change.append(math.log(x, math.e))
                     before = x
                 dfgp["traded_market_value"] = liutongguben
                 dfgp["market_value"] = guben
                 dfgp["change"] = change
+		dfgp["code"] = code_list
                 # print dfgp[nan:]
                 return dfgp[nan + 1:]
+
+
     def GetCwzy(self,code):     #财务摘要表
         ret = urllib.urlopen("http://money.finance.sina.com.cn/corp/go.php/vFD_FinanceSummary/stockid/"+code+".phtml")
         soup = BeautifulSoup(Tools().smartCode(ret.read()), "html.parser")
@@ -180,7 +185,8 @@ class ShareClass():
                 data = w.get_text().split("\n")
                 jlr = data[2]
                 jlr = jlr.split(u'元')[0]
-                dict.update({jzrq: {u"截止日期".encode('gbk', 'ignore').decode('gbk'):jzrq.encode('gbk', 'ignore').decode('gbk'),
+                dict.update({jzrq: {u"stock_code":code,
+				    u"截止日期".encode('gbk', 'ignore').decode('gbk'):jzrq.encode('gbk', 'ignore').decode('gbk'),
                                     u"每股净资产".encode('gbk', 'ignore').decode('gbk'): mgjzc.encode('gbk', 'ignore').decode('gbk'),
                                     u"每股收益".encode('gbk', 'ignore').decode('gbk'): mgsy.encode('gbk', 'ignore').decode('gbk'),
                                     u"每股现金含量".encode('gbk', 'ignore').decode('gbk'): mgxjhl.encode('gbk', 'ignore').decode('gbk'),
@@ -201,6 +207,7 @@ class ShareClass():
         ret=urllib.urlopen(url)
         pd=pandas.read_table(StringIO(ret.read()),encoding="gb2312").set_index(u'报表日期').transpose()
         pd.insert(0,u"报表日期",pd.index)
+        pd.insert(0,u"stock_code",code)
         del pd[u"单位"]
         return pd
     def GetLrb(self,code):#利润表
@@ -208,6 +215,7 @@ class ShareClass():
         ret=urllib.urlopen(url)
         pd=pandas.read_table(StringIO(ret.read()),encoding="gb2312").set_index(u'报表日期').transpose()
         pd.insert(0,u"报表日期",pd.index)
+        pd.insert(0,u"stock_code",code)
         del pd[u"单位"]
         return pd
     def GetXjllb(self,code):#现金流量表
@@ -318,11 +326,11 @@ class ShareClass():
         url = "http://vip.stock.finance.sina.com.cn/corp/go.php/vCI_StockStructure/stockid/"+code+".phtml"
         ret = requests.get(url)
         ret.encoding = "GBK"
-        x = BeautifulSoup(ret.text, "html.parser")
+        x = BeautifulSoup(ret.text, "html5lib")
         dict = {}
         num=-1
+        array = []
         for y in x.find_all(id="con02-1"):
-            array = []
             for z in y.find_all("tr"):
                 data = z.find_all("td")
                 if not len(data) is 0 :

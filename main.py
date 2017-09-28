@@ -60,7 +60,7 @@ def xx(code):
     return pd1
 if __name__ == '__main__':
     #print desc('600000',sql=True).Rstr()
-    print desc('600000',sql=True).Beta()
+    #print desc('600000',sql=True).Beta()
 
     # pd=ShareClass().GetDayData('002088')
     # Tools().UpLoadToSQL(pd, '002088', "_tencent", "daydata")
@@ -79,6 +79,8 @@ if __name__ == '__main__':
     # Tool.UpLoadToSQL(PD,"002088",'_tencent',"daydata")
 
         #re.findall(r'http://stock.jrj.com.cn/share(.+?)shtml',Tools().smartCode(ret.read()))
+
+    print ShareClass().GetDayData(code='000001',zs=False)
 
 
 
